@@ -109,6 +109,80 @@ def get_lizhi_music_parm(music_url):
     return music_parm
 
 
+def get_changya_music_parm(music_url):
+    print("开始获取唱鸭的参数")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+    }
+    html = requests.request("GET", music_url, headers=headers).text
+
+    song_json_res = re.search(
+        r'<script id="__NEXT_DATA__" type="application/json" crossorigin="anonymous">(?P<song_json>[\s\S]*?)</script>',
+        html)
+    song_data = song_json_res.groupdict()['song_json'].strip()
+    music_data = json.loads(song_data)["props"]["pageProps"]["clip"]
+
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    music_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", music_data["songName"])
+    print(music_name)
+    mp3_url = music_data["audioSrc"]
+
+    music_parm = [music_name, mp3_url]
+    return music_parm
+
+
+def get_changya2_music_parm(music_url):
+    print("开始获取唱鸭2的参数")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+    }
+    html = requests.request("GET", music_url, headers=headers).text
+
+    song_json_res = re.search(
+        r'<script id="__NEXT_DATA__" type="application/json" crossorigin="anonymous">(?P<song_json>[\s\S]*?)</script>',
+        html)
+    song_data = song_json_res.groupdict()['song_json'].strip()
+    mp4_url = json.loads(song_data)["props"]["pageProps"]["url"]
+
+    music_name = "changya" + str(int(round(time.time() * 1000)))
+    print(music_name)
+
+    music_parm = [music_name, mp4_url]
+    return music_parm
+
+
+def get_kugouchang_music_parm(music_url):
+    print("开始获取酷狗唱唱的参数")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+    }
+    res = requests.request("GET", music_url, headers=headers, allow_redirects=False)
+    location_url = res.headers["Location"]
+    pre_location_url = location_url.split('?')[0]
+    slash_location_url = pre_location_url.rsplit('/', 1)[1]
+    req_parm = slash_location_url.split('-')
+    data = req_parm[1][4:]
+    sign = req_parm[3][4:]
+
+    url = "https://acsing.service.kugou.com/sing7/web/jsonp/cdn/opus/listenGetData?data=" + data + "&sign=" + sign + "&channelId=0"
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+
+    music_data = json.loads(response.text.encode('utf8'))["data"]
+
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    music_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", music_data["opusName"])
+    print(music_name)
+    opus_url = music_data["opusUrl"]
+
+    music_parm = [music_name, opus_url]
+    return music_parm
+
+
 def get_kg_music_parm(music_url):
     print("开始获取全民K歌的参数")
     # 将%xx转义符替换为它们的单字符等效项
@@ -160,6 +234,14 @@ def get_all_music_parm(music_url):
         music_parm = get_changba_music_parm(music_url)
     elif re.match(r"^((https|http)?:\/\/www.lizhi.fm)[^\s]+", music_url) is not None:
         music_parm = get_lizhi_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/t.kugou.com)[^\s]+", music_url) is not None:
+        music_parm = get_kugouchang_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/changya.i52hz.com/soloShare)[^\s]+", music_url) is not None:
+        music_parm = get_changya_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/changya.i52hz.com/user-piece)[^\s]+", music_url) is not None:
+        music_parm = get_changya_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/changya.i52hz.com/video)[^\s]+", music_url) is not None:
+        music_parm = get_changya2_music_parm(music_url)
     else:
         music_parm = ["null", "null"]
 
@@ -413,7 +495,7 @@ class Application(tk.Tk):
         labDeclare.place(x=40, y=282, width=151, height=41)
 
         # 左边开始布局
-        help_str = "使用指南\n1.本地音频转换：打开选择本地文件，开始进行转换\n2.网络分享音频：支持全民K歌、唱吧、荔枝、喜马拉雅"
+        help_str = "使用指南\n1.本地音频转换：打开选择本地文件，开始进行转换\n2.网络分享音频：支持全民K歌、唱吧、荔枝、喜马拉雅、唱鸭、酷狗唱唱"
         labShow = tk.Label(L_frame, text=help_str, wraplength=313, justify="left", font=s_font, bd=1, relief="solid",
                            bg=frame_color,
                            fg=font_color)
