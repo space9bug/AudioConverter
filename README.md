@@ -2,6 +2,9 @@
 嗖音HOME(原名：Soul录音格式转换器)
 
 # 版本发布
+V3.1.0 更名为嗖音HOME，重构代码（界面与逻辑分离），修复反馈信息出现空行的问题，减小安装包体积（在线加载组件）
+https://474b.com/file/20114131-440602208
+
 V3.0.1 界面版首次发布
 https://474b.com/file/20114131-414434508
 
@@ -20,6 +23,7 @@ https://474b.com/file/20114131-373000097
 
 ## 构建环境
 - python 3.7.7
+- pyinstaller 3.6
 - 第三方库依赖：requests
 
 ## 使用pyinstaller进行构建
@@ -27,7 +31,11 @@ https://474b.com/file/20114131-373000097
 
 在build目录中，添加以下文件，即可运行
 
-ffmpeg.exe
+7z.dll
+
+7z.exe
+
+aria2c.exe
 
 WAV(空文件夹)
 
@@ -39,6 +47,10 @@ logo.ico
 
 # 文件资源
 logo.ico https://www.easyicon.net/1225972-music_icon.html
+
+7-Zip https://www.7-zip.org/
+
+aria2c.exe https://aria2.github.io/
 
 ffmpeg.exe https://ffmpeg.zeranoe.com/builds/
 
