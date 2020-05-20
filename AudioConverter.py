@@ -380,11 +380,8 @@ class Application(tk.Tk):
         if not os.path.exists("ffmpeg.exe"):
             self.top.deiconify()
             try:
-                connect_request = requests.get(url="https://gitee.com/", timeout=3)
-                request_status = connect_request.status_code
-                print(request_status)
-
-                str_out = ['aria2c.exe', "https://space9.gitee.io/ffmpegbuilds/win32/ffmpeg.7z"]
+                str_out = ['aria2c.exe', '-o', "ffmpeg.7z",
+                           "https://ncstatic.clewm.net/rsrc/2020/0520/14/0b9f34392178f1c5aaee7baaa677da05.obj"]
                 print(str_out)
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
@@ -394,6 +391,11 @@ class Application(tk.Tk):
                                            text=True, startupinfo=si)
                 for line in process.stdout:
                     # print(line)
+
+                    status_res = re.search(r'\((?P<status>[\s\S]*?)\):', line)
+                    if status_res is not None:
+                        if status_res.groupdict()['status'] == "ERR":
+                            raise Exception("下载错误")
 
                     percent_res = re.search(r'\((?P<percent>[\s\S]*?)%\)', line)
                     if percent_res is not None:
