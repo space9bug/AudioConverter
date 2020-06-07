@@ -310,6 +310,33 @@ def del_wavparm(infile_path, outfile_path):
     file_in.close()
 
 
+def burying_point():
+    # print("埋点统计")
+    bury_url = "https://sourl.cn/NcRtPm"
+    cookie_file_name = "cookie.json"
+
+    if os.path.exists(cookie_file_name):
+        with open(cookie_file_name, "r", encoding="utf-8") as load_file:
+            load_dict = json.load(load_file)
+            # print(load_dict)
+
+        headers = {
+            'Cookie': 'xm_v=' + load_dict["xm_v"]
+        }
+
+        response = requests.request("GET", bury_url, headers=headers, allow_redirects=False)
+        print(response.elapsed.total_seconds())
+    else:
+        # 第一次请求，获取cookie并保存
+        session = requests.session()
+        session.get(bury_url, allow_redirects=False)
+        set_cookie = requests.utils.dict_from_cookiejar(session.cookies)
+        print(set_cookie)
+
+        with open(cookie_file_name, "w", encoding="utf-8") as out_file:
+            json.dump(set_cookie, out_file)
+
+
 def show_file_path():
     subprocess.run(['explorer.exe', '/n,WAV'])
 
@@ -798,6 +825,8 @@ class Application(tk.Tk):
             else:
                 self.update_info.set("已是最新版本:" + self.version)
                 self.update_url.set(version_data["downUrl"])
+
+            burying_point()
         except Exception as e:
             print("网络未连接，请检查连接后重试")
             print(e)
