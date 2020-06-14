@@ -152,7 +152,7 @@ def get_changya2_music_parm(music_url):
 
 
 def get_kugouchang_music_parm(music_url):
-    print("开始获取酷狗唱唱的参数")
+    print("开始获取酷狗唱唱和斗歌的参数")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
     }
@@ -223,6 +223,24 @@ def get_kg_music_parm(music_url):
     return music_parm
 
 
+def get_maozhua_music_parm(music_url):
+    print("开始获取猫爪弹唱的参数")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+    }
+    html = requests.request("GET", music_url, headers=headers).text
+
+    song_media_res = re.search(r'media:(?P<song_media>[\s\S]*?),', html)
+    song_media = song_media_res.groupdict()['song_media'].strip().strip("\"")
+    mp4_url = song_media.replace("\\u002F", "/")
+
+    music_name = "maozhua" + str(int(round(time.time() * 1000)))
+    print(music_name)
+
+    music_parm = [music_name, mp4_url]
+    return music_parm
+
+
 def get_all_music_parm(music_url):
     if re.match(r"^((https|http)?:\/\/kg2.qq.com)[^\s]+", music_url) is not None:
         music_parm = get_kg_music_parm(music_url)
@@ -242,6 +260,8 @@ def get_all_music_parm(music_url):
         music_parm = get_changya_music_parm(music_url)
     elif re.match(r"^((https|http)?:\/\/changya.i52hz.com/video)[^\s]+", music_url) is not None:
         music_parm = get_changya2_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/maozhua.xiaochang.com)[^\s]+", music_url) is not None:
+        music_parm = get_maozhua_music_parm(music_url)
     else:
         music_parm = ["null", "null"]
 

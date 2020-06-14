@@ -3,21 +3,17 @@
 
 # 版本发布
 V3.1.0 更名为嗖音HOME，重构代码（界面与逻辑分离），修复反馈信息出现空行的问题，减小安装包体积（在线加载组件）
-https://474b.com/file/20114131-440602208
+https://sourl.cn/DeKdhs
 
 V3.0.1 界面版首次发布
-https://474b.com/file/20114131-414434508
 
 V3.0 增加gui可视化界面，使用python语言实现
 
 V2.1 提升了音质
-https://474b.com/file/20114131-399684744
 
 V2.0 解决了文件头信息（使用ffmpeg转换的音频文件头会默认增加扩展信息）导致音频开头出现杂音的问题
-https://474b.com/file/20114131-373000858
 
 V1.0 首次发布
-https://474b.com/file/20114131-373000097
 
 # 使用方法
 
@@ -29,7 +25,7 @@ https://474b.com/file/20114131-373000097
 ## 使用pyinstaller进行构建
 构建命令：pyinstaller -D -w -i logo.ico AudioConverter.py
 
-在build目录中，添加以下文件，即可运行
+在dist/AudioConverter目录中，添加以下文件，即可运行
 
 7z.dll
 
