@@ -241,6 +241,41 @@ def get_maozhua_music_parm(music_url):
     return music_parm
 
 
+def get_tanchang_music_parm(music_url):
+    print("开始获取弹唱达人的参数")
+    # 将%xx转义符替换为它们的单字符等效项
+    url_data = parse.unquote(music_url)
+
+    # url结果
+    result = parse.urlparse(url_data)
+    print(result)
+
+    # url里的查询参数
+    query_dict = parse.parse_qs(result.query)
+    works_id = query_dict["worksID"][0]
+    print(works_id)
+
+    publisher = query_dict["publisher"][0]
+    print(publisher)
+
+    url = "http://res.tc.xfun233.com/musical/h5/share/songs/info?publisher=" + publisher + "&worksId=" + works_id
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+
+    music_data = json.loads(response.text)["result"]
+    print(music_data["name"] + ".aac")
+    works_url = music_data["worksUrl"]
+    print(works_url)
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    music_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", music_data["name"])
+    music_parm = [music_name, works_url]
+    return music_parm
+
+
 def get_all_music_parm(music_url):
     if re.match(r"^((https|http)?:\/\/kg2.qq.com)[^\s]+", music_url) is not None:
         music_parm = get_kg_music_parm(music_url)
@@ -262,6 +297,8 @@ def get_all_music_parm(music_url):
         music_parm = get_changya2_music_parm(music_url)
     elif re.match(r"^((https|http)?:\/\/maozhua.xiaochang.com)[^\s]+", music_url) is not None:
         music_parm = get_maozhua_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/res.tc.xfun233.com)[^\s]+", music_url) is not None:
+        music_parm = get_tanchang_music_parm(music_url)
     else:
         music_parm = ["null", "null"]
 
