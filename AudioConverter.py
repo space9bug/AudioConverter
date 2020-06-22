@@ -276,6 +276,14 @@ def get_tanchang_music_parm(music_url):
     return music_parm
 
 
+def get_aichang_music_parm(music_url):
+    print("开始获取爱唱的参数")
+    music_name = "aichang" + str(int(round(time.time() * 1000)))
+    print(music_name)
+    music_parm = [music_name, music_url]
+    return music_parm
+
+
 def get_all_music_parm(music_url):
     if re.match(r"^((https|http)?:\/\/kg2.qq.com)[^\s]+", music_url) is not None:
         music_parm = get_kg_music_parm(music_url)
@@ -299,6 +307,8 @@ def get_all_music_parm(music_url):
         music_parm = get_maozhua_music_parm(music_url)
     elif re.match(r"^((https|http)?:\/\/res.tc.xfun233.com)[^\s]+", music_url) is not None:
         music_parm = get_tanchang_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/weibo.mengliaoba.cn)[^\s]+", music_url) is not None:
+        music_parm = get_aichang_music_parm(music_url)
     else:
         music_parm = ["null", "null"]
 
