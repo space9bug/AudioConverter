@@ -18,8 +18,8 @@ V1.0 首次发布
 # 使用方法
 
 ## 构建环境
-- python 3.7.7
-- pyinstaller 3.6
+- python 3.8.5
+- pyinstaller 4.0.dev0
 - 第三方库依赖：requests
 
 ## 使用pyinstaller进行构建
