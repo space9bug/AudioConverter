@@ -1,4 +1,5 @@
 import json
+import random
 import re
 import time
 from urllib import parse
@@ -142,7 +143,7 @@ def get_changya2_music_parm(music_url):
 
 
 def get_kugouchang_music_parm(music_url):
-    print("开始获取酷狗唱唱和斗歌的参数")
+    print("开始获取酷狗唱唱和斗歌和酷狗K歌的参数")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
     }
@@ -152,7 +153,10 @@ def get_kugouchang_music_parm(music_url):
     slash_location_url = pre_location_url.rsplit('/', 1)[1]
     req_parm = slash_location_url.split('-')
     data = req_parm[1][4:]
-    sign = req_parm[3][4:]
+    if len(req_parm) == 3:
+        sign = req_parm[2][4:]
+    else:
+        sign = req_parm[3][4:]
 
     url = "https://acsing.service.kugou.com/sing7/web/jsonp/cdn/opus/listenGetData?data=" + data + "&sign=" + sign + "&channelId=0"
 
@@ -305,6 +309,207 @@ def get_shange_music_parm(music_url):
     return music_parm
 
 
+def get_vv_music_parm(music_url):
+    print("开始获取VV音乐的参数")
+    # 将%xx转义符替换为它们的单字符等效项
+    url_data = parse.unquote(music_url)
+
+    # url结果
+    result = parse.urlparse(url_data)
+    print(result)
+
+    # url里的查询参数
+    query_dict = parse.parse_qs(result.query)
+    av_id = query_dict["avId"][0]
+    print(av_id)
+
+    url = "http://k.51vv.com/userPage/getAvinfo.htm?parameter={avID:" + av_id + "}&r=" + str(random.random())
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+
+    result_data = json.loads(response.text)["result"]
+    music_url = result_data["fileURL"]
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    music_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", result_data["name"])
+
+    music_parm = [music_name, music_url]
+    return music_parm
+
+
+def get_iting_music_parm(music_url):
+    print("开始获取爱听的参数")
+    html = requests.get(music_url).text
+
+    title_res = re.search(r'<header class="music_title">(?P<title>[\s\S]*?)</header>', html)
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    music_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", title_res.groupdict()['title'])
+    print(music_name)
+    song_url_res = re.search(r'<input type="hidden" id="ksongUrl" value="(?P<song_url>[\s\S]*?)" />', html)
+    mp3_url = song_url_res.groupdict()['song_url']
+
+    music_parm = [music_name, mp3_url]
+    return music_parm
+
+
+def get_kugoudazi_music_parm(music_url):
+    print("开始获取酷狗音乐大字版的参数")
+    # 将%xx转义符替换为它们的单字符等效项
+    url_data = parse.unquote(music_url)
+
+    # url结果
+    result = parse.urlparse(url_data)
+    print(result)
+
+    # url里的查询参数
+    query_dict = parse.parse_qs(result.query)
+    data = query_dict["data"][0]
+    sign = query_dict["sign"][0]
+
+    url = "https://acsing.service.kugou.com/sing7/web/jsonp/cdn/opus/listenGetData?data=" + data + "&sign=" + sign + "&channelId=0"
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+    }
+
+    response = requests.request("GET", url, headers=headers)
+
+    music_data = json.loads(response.text.encode('utf8'))["data"]
+
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    music_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", music_data["opusName"])
+    print(music_name)
+    opus_url = music_data["opusUrl"]
+
+    music_parm = [music_name, opus_url]
+    return music_parm
+
+
+def get_kuwokge_music_parm(music_url):
+    print("开始获取酷我K歌的参数")
+    song_id = music_url.rsplit('/', 1)[1]
+    print(song_id)
+
+    base_url = "http://nksingserver.kuwo.cn/nks/mobile/GetWorkBase?id=" + song_id
+
+    base_headers = {
+        'User-Agent': 'android-async-http/1.4.3 (http://loopj.com/android-async-http)'
+    }
+
+    base_response = requests.request("GET", base_url, headers=base_headers)
+
+    title = json.loads(base_response.text.encode('utf8'))["title"]
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    song_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", parse.unquote(title))
+    print(song_name)
+
+    detail_url = "http://nksingserver.kuwo.cn/nks/mobile/GetWorkDetail?id=" + song_id
+
+    detail_headers = {
+        'User-Agent': 'android-async-http/1.4.3 (http://loopj.com/android-async-http)'
+    }
+
+    detail_response = requests.request("GET", detail_url, headers=detail_headers)
+
+    temp_url = json.loads(detail_response.text.encode('utf8'))["url"]
+    # 将%xx转义符替换为它们的单字符等效项
+    aac_url = parse.unquote(temp_url)
+    print(aac_url)
+
+    music_parm = [song_name, aac_url]
+    return music_parm
+
+
+def get_qmks_music_parm(music_url):
+    print("开始获取全民K诗的参数")
+    # 将%xx转义符替换为它们的单字符等效项
+    url_data = parse.unquote(music_url)
+
+    # url结果
+    result = parse.urlparse(url_data)
+    print(result)
+
+    # url里的查询参数
+    query_dict = parse.parse_qs(result.query)
+    s_id = query_dict["id"][0]
+    print(s_id)
+
+    url = "https://ks.weinisongdu.com/shareOpusV3?id=" + s_id
+    html = requests.get(url).text
+
+    content_res = re.search(r'var shareContent = (?P<content>[\s\S]*?);', html)
+    content_str = content_res.groupdict()['content'].strip()
+    music_data = json.loads(content_str)
+
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    music_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", music_data["title"])
+    print(music_name)
+
+    mp3_url = music_data["dataUrl"]
+    print(mp3_url)
+
+    music_parm = [music_name, mp3_url]
+    return music_parm
+
+
+def get_tlkg_music_parm(music_url):
+    print("开始获取天籁K歌的参数")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; LIO-AN00 Build/HUAWEILIO-AN00) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Mobile Safari/537.36'
+    }
+
+    response = requests.request("GET", music_url, headers=headers)
+
+    html = response.text
+    content_res = re.search(r'\$\(this\)\.jPlayer\("setMedia", (?P<content>[\s\S]*?)\);', html)
+    content_str = content_res.groupdict()['content'].strip()
+    print(content_str)
+
+    items_res = re.findall(r': "([\s\S]*?)"', content_str)
+
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    song_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", items_res[0])
+    print(song_name)
+
+    song_url = items_res[1]
+    print(song_url)
+
+    music_parm = [song_name, song_url]
+    return music_parm
+
+
+def get_migukge_music_parm(music_url):
+    print("开始获取咪咕K歌的参数")
+    song_uuid = music_url.rsplit('=', 1)[1]
+    print(song_uuid)
+
+    url = "http://jk.ising.nf.migu.cn/share1/mv"
+
+    payload = 'uuid=' + song_uuid
+    headers = {
+        'Referer': 'http://acstatic.migu.cn/mobile/share/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=payload)
+
+    mv_data = json.loads(response.text.encode('utf8'))["data"]["mv"]
+
+    # 文件名不能包含下列任何字符：\/:*?"<>|       英文字符
+    mp3_name = re.sub(r'[\\/:*?"<>|\r\n]+', "", mv_data["name"])
+    print(mp3_name)
+
+    mp3_url = mv_data["mp3"]
+    print(mp3_url)
+
+    music_parm = [mp3_name, mp3_url]
+    return music_parm
+
+
 def get_all_music_parm(music_url):
     if re.match(r"^((https|http)?:\/\/kg[2-9].qq.com)[^\s]+", music_url) is not None:
         music_parm = get_kg_music_parm(music_url)
@@ -334,6 +539,20 @@ def get_all_music_parm(music_url):
         music_parm = get_aichang_music_parm(music_url)
     elif re.match(r"^((https|http)?:\/\/shange.musiccz.net)[^\s]+", music_url) is not None:
         music_parm = get_shange_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/k.51vv.com)[^\s]+", music_url) is not None:
+        music_parm = get_vv_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/m.imusic.cn)[^\s]+", music_url) is not None:
+        music_parm = get_iting_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/activity.kugou.com)[^\s]+", music_url) is not None:
+        music_parm = get_kugoudazi_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/kge.kuwo.cn)[^\s]+", music_url) is not None:
+        music_parm = get_kuwokge_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/ks.weinisongdu.com)[^\s]+", music_url) is not None:
+        music_parm = get_qmks_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/www.tlkg.com)[^\s]+", music_url) is not None:
+        music_parm = get_tlkg_music_parm(music_url)
+    elif re.match(r"^((https|http)?:\/\/acstatic.migu.cn)[^\s]+", music_url) is not None:
+        music_parm = get_migukge_music_parm(music_url)
     else:
         music_parm = ["null", "null"]
 
