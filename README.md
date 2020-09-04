@@ -23,7 +23,7 @@ V1.0 首次发布
 - 第三方库依赖：requests
 
 ## 使用pyinstaller进行构建
-构建命令：pyinstaller -D -w -i logo.ico AudioConverter.py
+构建命令：pyinstaller -D -w -i logo.ico AudioConverter.py Amusic.py
 
 在dist/AudioConverter目录中，添加以下文件，即可运行
 
