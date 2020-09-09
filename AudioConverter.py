@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import random
 import re
 import struct
 import subprocess
@@ -124,11 +125,13 @@ class Application(tk.Tk):
     def __init__(self):
         super().__init__()
         self.name = ""
-        self.version = "V3.1.0"
+        self.version = "V3.1.1"
         self.sampling_rate_ver = tk.IntVar()
         self.content = tk.StringVar()
         self.update_url = tk.StringVar()
         self.update_info = tk.StringVar()
+        self.read_url = ""
+        self.read_str = tk.StringVar()
 
         # 创建一个顶级弹窗
         self.withdraw()
@@ -263,10 +266,13 @@ class Application(tk.Tk):
 
         # 创建
         t = threading.Thread(target=self.update_fun)
+        read_t = threading.Thread(target=self.read_fun)
         # 守护 !!!
         t.setDaemon(True)
+        read_t.setDaemon(True)
         # 启动
         t.start()
+        read_t.start()
 
         # 右边开始布局
         updateLab = tk.Label(R_frame, textvariable=self.update_info, font=l_font, bg=update_bg_color, fg=update_color)
@@ -292,11 +298,17 @@ class Application(tk.Tk):
         labDeclare.place(x=40, y=282, width=151, height=41)
 
         # 左边开始布局
-        help_str = "使用指南\n1.本地音频转换：打开选择本地文件，开始进行转换\n2.网络分享音频：支持全民K歌、唱吧、荔枝、喜马拉雅、唱鸭、酷狗唱唱"
-        labShow = tk.Label(L_frame, text=help_str, wraplength=313, justify="left", font=s_font, bd=1, relief="solid",
+        self.read_str.set("随机阅读：正在加载中......")
+        labShow = tk.Label(L_frame, textvariable=self.read_str, wraplength=252, justify="left", anchor="w", padx=5,
+                           bd=1,
+                           relief="solid",
                            bg=frame_color,
                            fg=font_color)
         labShow.place(x=30, y=25, width=313, height=70)
+
+        labReadAll = tk.Label(L_frame, text="查看全文", bg=frame_color, fg="#22B14C")
+        labReadAll.place(x=287, y=26, width=55, height=68)
+        labReadAll.bind("<Button-1>", self.read_page)
 
         self.content.set("请选择要转换的音频文件")
         lab = tk.Label(L_frame, textvariable=self.content, font=m_font, bg=frame_color, fg=font_color)
@@ -343,6 +355,10 @@ class Application(tk.Tk):
                                activeforeground=font_color,
                                activebackground=frame_color)
         buttonFile.place(x=268, y=291, width=75, height=23)
+
+        labHelp = tk.Label(L_frame, text="<使用指南>", font=s_font, bg=frame_color, fg=font_color)
+        labHelp.place(x=10, y=306, width=75, height=23)
+        labHelp.bind("<Button-1>", self.show_help)
 
         progressbar_style = ttk.Style()
         progressbar_style.theme_use('alt')
@@ -419,6 +435,9 @@ class Application(tk.Tk):
             # 恢复本地转换按钮
             self.buttonStart.config(state="normal")
             return
+        self.progressBar["value"] = 0
+        self.content.set("请选择要转换的音频文件")
+        self.update()
         try:
             music_data = Amusic.get_all_music_parm(music_url)
             if music_data[0] == "null" and music_data[1] == "null":
@@ -510,6 +529,8 @@ class Application(tk.Tk):
             # 恢复网络转换按钮
             self.buttonOpenUrl.config(state="normal")
             return
+        self.progressBar["value"] = 0
+        self.update()
         sampling_rate = "48000"
         if self.sampling_rate_ver.get() == 1:
             sampling_rate = "32000"
@@ -567,8 +588,70 @@ class Application(tk.Tk):
         print(event)
         open_url = self.update_url.get()
         if open_url != "":
-            print(open_url)
             webbrowser.open(open_url)
+
+    def read_fun(self):
+        try:
+            read_data_url = "https://sourl.cn/GL53FH"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
+            }
+            res = requests.request("GET", read_data_url, headers=headers, allow_redirects=False)
+            location_url = res.headers["Location"]
+
+            response = requests.request("GET", location_url, headers=headers)
+            response.encoding = "utf-8"
+
+            read_data = json.loads(response.text)
+            read_index = random.randint(0, len(read_data) - 1)
+            article_title = read_data[read_index][0]
+            if article_title is not None:
+                self.read_str.set("随机阅读：" + article_title)
+
+            article_url = read_data[read_index][1]
+            pre_url = "https://blog.csdn.net/qq_41730930"
+            if article_url is not None:
+                self.read_url = pre_url + "/article/details/" + article_url
+            else:
+                self.read_url = pre_url
+        except Exception as e:
+            print("网络未连接，请检查连接后重试")
+            print(e)
+            self.read_url = pre_url
+
+    def read_page(self, event):
+        print(event)
+        if self.read_url != "":
+            webbrowser.open(self.read_url)
+
+    def show_help(self, event):
+        print(event)
+        self.update()
+        # 获取主窗口的左上角坐标
+        origin_x = self.winfo_x()
+        origin_y = self.winfo_y()
+        # 获取主窗口的宽、高
+        origin_width = self.winfo_width()
+        origin_height = self.winfo_height()
+        # 设置窗口大小
+        width = 300
+        height = 169
+
+        # 创建一个顶级弹窗
+        helpTop = tk.Toplevel()
+        helpTop.title("使用指南")
+        helpTop.iconbitmap("logo.ico")
+        helpTop.attributes("-alpha", 0.99)
+
+        geometry_str = '%dx%d+%d+%d' % (
+            width, height, origin_x + (origin_width - width) / 2, origin_y + (origin_height - height) / 2)
+        helpTop.geometry(geometry_str)
+        helpTop.resizable(width=False, height=False)
+        helpTop.focus_set()
+
+        help_str = "使用指南\n1.本地音频转换：打开选择本地文件，开始进行转换\n2.网络分享音频：支持唱鸭、全民K歌、唱吧、荔枝、喜马拉雅、斗歌、酷狗唱唱、猫爪弹唱、弹唱达人、爱唱、闪歌、VV音乐、爱听、酷狗音乐大字版、酷我K歌、全民K诗、天籁K歌、咪咕K歌、酷狗K歌"
+        helpMessage = tk.Message(helpTop, text=help_str, justify="left", width=260)
+        helpMessage.place(x=0, y=0, width=300, height=169)
 
     def update_fun(self):
         try:
