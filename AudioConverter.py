@@ -174,6 +174,9 @@ class Application(tk.Tk):
         self.createWidgets()
 
     def init_fun(self):
+        # 创建输出文件夹
+        mkdir("WAV\\")
+
         # print("开始下载ffmpeg包")
         if not os.path.exists("ffmpeg.exe"):
             self.top.deiconify()
@@ -591,6 +594,7 @@ class Application(tk.Tk):
             webbrowser.open(open_url)
 
     def read_fun(self):
+        pre_url = "https://blog.csdn.net/qq_41730930"
         try:
             read_data_url = "https://sourl.cn/GL53FH"
             headers = {
@@ -602,16 +606,22 @@ class Application(tk.Tk):
             response = requests.request("GET", location_url, headers=headers)
             response.encoding = "utf-8"
 
-            read_data = json.loads(response.text)
-            read_index = random.randint(0, len(read_data) - 1)
-            article_title = read_data[read_index][0]
-            if article_title is not None:
-                self.read_str.set("随机阅读：" + article_title)
+            response_code = response.status_code
+            if response_code == 200:
+                read_data = json.loads(response.text)
+                if read_data is not None:
+                    read_index = random.randint(0, len(read_data) - 1)
+                    article_title = read_data[read_index][0]
+                    if article_title is not None:
+                        self.read_str.set("随机阅读：" + article_title)
 
-            article_url = read_data[read_index][1]
-            pre_url = "https://blog.csdn.net/qq_41730930"
-            if article_url is not None:
-                self.read_url = pre_url + "/article/details/" + article_url
+                    article_url = read_data[read_index][1]
+                    if article_url is not None:
+                        self.read_url = pre_url + "/article/details/" + article_url
+                    else:
+                        self.read_url = pre_url
+                else:
+                    self.read_url = pre_url
             else:
                 self.read_url = pre_url
         except Exception as e:

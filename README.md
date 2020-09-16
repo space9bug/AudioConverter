@@ -22,7 +22,7 @@ V1.0 首次发布
 
 ## 构建环境
 - python 3.8.5
-- pyinstaller 4.0.dev0
+- pyinstaller 4.0
 - 第三方库依赖：requests
 
 ## 使用pyinstaller进行构建
@@ -35,8 +35,6 @@ V1.0 首次发布
 7z.exe
 
 aria2c.exe
-
-WAV(空文件夹)
 
 logo.ico
 
