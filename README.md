@@ -21,7 +21,7 @@ V1.0 首次发布
 # 使用方法
 
 ## 构建环境
-- python 3.8.5
+- python 3.8.6rc1
 - pyinstaller 4.0
 - 第三方库依赖：requests
 
