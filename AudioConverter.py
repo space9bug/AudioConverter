@@ -182,7 +182,7 @@ class Application(tk.Tk):
             self.top.deiconify()
             try:
                 str_out = ['aria2c.exe', '-o', "ffmpeg.7z",
-                           "https://ncstatic.clewm.net/rsrc/2020/0520/14/0b9f34392178f1c5aaee7baaa677da05.obj"]
+                           "https://ncstatic.clewm.net/rsrc/2020/0920/08/67baff128cddba3d1104b7be2f9f84fa.obj"]
                 print(str_out)
                 si = subprocess.STARTUPINFO()
                 si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
