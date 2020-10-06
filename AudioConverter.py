@@ -438,9 +438,9 @@ class Application(tk.Tk):
             # 恢复本地转换按钮
             self.buttonStart.config(state="normal")
             return
-        self.progressBar["value"] = 0
+
         self.content.set("请选择要转换的音频文件")
-        self.update()
+
         try:
             music_data = Amusic.get_all_music_parm(music_url)
             if music_data[0] == "null" and music_data[1] == "null":
@@ -459,59 +459,19 @@ class Application(tk.Tk):
             self.buttonStart.config(state="normal")
             return
         self.content.set(music_name)
-        # 开始转换
-        ##########################################################################################################
+
         start_time = time.perf_counter()
+
         sampling_rate = "48000"
         if self.sampling_rate_ver.get() == 1:
             sampling_rate = "32000"
-        temp_path = "TEMP\\"
-        mkdir(temp_path)
-        # 临时音乐名
-        temp_music_name = str(round(time.time() * 1000))
-        str_out = ['ffmpeg.exe', '-i', music_play_url, '-ar', sampling_rate, '-ac', '1', '-acodec', 'pcm_s16le',
-                   '-hide_banner',
-                   temp_path + temp_music_name + ".wav"]
-        print(str_out)
-        si = subprocess.STARTUPINFO()
-        si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
-        si.wShowWindow = subprocess.SW_HIDE
-        process = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                   encoding="utf-8",
-                                   text=True, startupinfo=si)
-        for line in process.stdout:
-            # print(line)
 
-            duration_res = re.search(r'\sDuration: (?P<duration>\S+)', line)
-            if duration_res is not None:
-                duration = duration_res.groupdict()['duration']
-                duration = re.sub(r',', '', duration)
+        self.ffmpeg_run(music_play_url, music_name, sampling_rate)
 
-            result = re.search(r'\stime=(?P<time>\S+)', line)
-            if result is not None:
-                elapsed_time = result.groupdict()['time']
-                progress = (get_seconds(elapsed_time) / get_seconds(duration)) * 100
-                print(elapsed_time)
-                print(progress)
-                # content.set("进度:%3.2f" % progress + "%")
-                self.progressBar["value"] = progress
-                self.update()
-        process.wait()
-        if process.poll() == 0:
-            infile_path = temp_path + temp_music_name + ".wav"
-            outfile_path = "WAV\\" + music_name + ".wav"
+        elapsed = (time.perf_counter() - start_time)
+        print("耗时:%6.2f" % elapsed + "秒")
+        self.content.set("耗时:%6.2f" % elapsed + "秒")
 
-            del_wavparm(infile_path, outfile_path)
-
-            elapsed = (time.perf_counter() - start_time)
-            print("耗时:%6.2f" % elapsed + "秒")
-            self.content.set("耗时:%6.2f" % elapsed + "秒")
-            del_file(temp_path)
-            print("success:", process)
-            # 设置终点
-            self.progressBar["value"] = 115
-        else:
-            print("error:", process)
         # 恢复本地转换按钮
         self.buttonStart.config(state="normal")
 
@@ -523,25 +483,14 @@ class Application(tk.Tk):
         print(self.name)
         self.content.set(filename)
 
-    def localfile_convert(self):
-        # 禁用网络转换按钮
-        self.buttonOpenUrl.config(state="disabled")
-        start_time = time.perf_counter()
-        if not self.name:
-            messagebox.showwarning(title="警告", message="请先选择文件后执行")
-            # 恢复网络转换按钮
-            self.buttonOpenUrl.config(state="normal")
-            return
+    def ffmpeg_run(self, input_file, music_name, sampling_rate):
         self.progressBar["value"] = 0
         self.update()
-        sampling_rate = "48000"
-        if self.sampling_rate_ver.get() == 1:
-            sampling_rate = "32000"
+
         temp_path = "TEMP\\"
         mkdir(temp_path)
-        music_name = os.path.splitext(os.path.basename(self.name))[0]
         temp_music_name = str(round(time.time() * 1000))
-        str_out = ['ffmpeg.exe', '-i', self.name, '-ar', sampling_rate, '-ac', '1', '-acodec', 'pcm_s16le',
+        str_out = ['ffmpeg.exe', '-i', input_file, '-ar', sampling_rate, '-ac', '1', '-acodec', 'pcm_s16le',
                    '-hide_banner',
                    temp_path + temp_music_name + ".wav"]
         print(str_out)
@@ -565,7 +514,7 @@ class Application(tk.Tk):
                 progress = (get_seconds(elapsed_time) / get_seconds(duration)) * 100
                 print(elapsed_time)
                 print(progress)
-                # content.set("进度:%3.2f" % progress + "%")
+                # self.content.set("进度:%3.2f" % progress + "%")
                 self.progressBar["value"] = progress
                 self.update()
         process.wait()
@@ -575,15 +524,36 @@ class Application(tk.Tk):
 
             del_wavparm(infile_path, outfile_path)
 
-            elapsed = (time.perf_counter() - start_time)
-            print("耗时:%6.2f" % elapsed + "秒")
-            self.content.set("耗时:%6.2f" % elapsed + "秒")
             del_file(temp_path)
             print("success:", process)
             # 设置终点
             self.progressBar["value"] = 115
         else:
             print("error:", process)
+
+    def localfile_convert(self):
+        # 禁用网络转换按钮
+        self.buttonOpenUrl.config(state="disabled")
+        if not self.name:
+            messagebox.showwarning(title="警告", message="请先选择文件后执行")
+            # 恢复网络转换按钮
+            self.buttonOpenUrl.config(state="normal")
+            return
+
+        start_time = time.perf_counter()
+
+        sampling_rate = "48000"
+        if self.sampling_rate_ver.get() == 1:
+            sampling_rate = "32000"
+
+        music_name = os.path.splitext(os.path.basename(self.name))[0]
+
+        self.ffmpeg_run(self.name, music_name, sampling_rate)
+
+        elapsed = (time.perf_counter() - start_time)
+        print("耗时:%6.2f" % elapsed + "秒")
+        self.content.set("耗时:%6.2f" % elapsed + "秒")
+
         # 恢复网络转换按钮
         self.buttonOpenUrl.config(state="normal")
 
