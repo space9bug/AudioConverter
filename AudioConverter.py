@@ -132,6 +132,7 @@ class Application(tk.Tk):
         self.update_info = tk.StringVar()
         self.read_url = ""
         self.read_str = tk.StringVar()
+        self.lock = threading.Lock()
 
         # 创建一个顶级弹窗
         self.withdraw()
@@ -429,6 +430,46 @@ class Application(tk.Tk):
     def del_url_show(self):
         self.entry_url.delete(0, "end")
 
+    def urlfile_thread(self, music_url):
+        self.lock.acquire()
+        try:
+            self.content.set("请选择要转换的音频文件")
+
+            try:
+                music_data = Amusic.get_all_music_parm(music_url)
+                if music_data[0] == "null" and music_data[1] == "null":
+                    print("不支持此分享链接或者链接格式错误")
+                    messagebox.showwarning(title="警告", message="不支持此分享链接或者链接格式错误")
+                    # 恢复本地转换按钮
+                    self.buttonStart.config(state="normal")
+                    return
+                music_name = music_data[0]
+                music_play_url = music_data[1]
+            except Exception as e:
+                print("网络未连接，请检查连接后重试")
+                print(e)
+                messagebox.showwarning(title="警告", message="网络未连接，请检查连接后重试")
+                # 恢复本地转换按钮
+                self.buttonStart.config(state="normal")
+                return
+            self.content.set(music_name)
+
+            start_time = time.perf_counter()
+
+            sampling_rate = "48000"
+            if self.sampling_rate_ver.get() == 1:
+                sampling_rate = "32000"
+
+            self.ffmpeg_run(music_play_url, music_name, sampling_rate)
+
+            elapsed = (time.perf_counter() - start_time)
+            print("耗时:%6.2f" % elapsed + "秒")
+            self.content.set("耗时:%6.2f" % elapsed + "秒")
+        finally:
+            self.lock.release()
+            # 恢复本地转换按钮
+            self.buttonStart.config(state="normal")
+
     def urlfile_convert(self):
         # 禁用本地转换按钮
         self.buttonStart.config(state="disabled")
@@ -439,41 +480,10 @@ class Application(tk.Tk):
             self.buttonStart.config(state="normal")
             return
 
-        self.content.set("请选择要转换的音频文件")
-
-        try:
-            music_data = Amusic.get_all_music_parm(music_url)
-            if music_data[0] == "null" and music_data[1] == "null":
-                print("不支持此分享链接或者链接格式错误")
-                messagebox.showwarning(title="警告", message="不支持此分享链接或者链接格式错误")
-                # 恢复本地转换按钮
-                self.buttonStart.config(state="normal")
-                return
-            music_name = music_data[0]
-            music_play_url = music_data[1]
-        except Exception as e:
-            print("网络未连接，请检查连接后重试")
-            print(e)
-            messagebox.showwarning(title="警告", message="网络未连接，请检查连接后重试")
-            # 恢复本地转换按钮
-            self.buttonStart.config(state="normal")
-            return
-        self.content.set(music_name)
-
-        start_time = time.perf_counter()
-
-        sampling_rate = "48000"
-        if self.sampling_rate_ver.get() == 1:
-            sampling_rate = "32000"
-
-        self.ffmpeg_run(music_play_url, music_name, sampling_rate)
-
-        elapsed = (time.perf_counter() - start_time)
-        print("耗时:%6.2f" % elapsed + "秒")
-        self.content.set("耗时:%6.2f" % elapsed + "秒")
-
-        # 恢复本地转换按钮
-        self.buttonStart.config(state="normal")
+        if not self.lock.locked():
+            temp_thread = threading.Thread(target=self.urlfile_thread, args=(music_url,))
+            temp_thread.setDaemon(True)
+            temp_thread.start()
 
     def openfile(self):
         # print("文本框内容：" + entry_url.get())
@@ -531,6 +541,27 @@ class Application(tk.Tk):
         else:
             print("error:", process)
 
+    def localfile_thread(self):
+        self.lock.acquire()
+        try:
+            start_time = time.perf_counter()
+
+            sampling_rate = "48000"
+            if self.sampling_rate_ver.get() == 1:
+                sampling_rate = "32000"
+
+            music_name = os.path.splitext(os.path.basename(self.name))[0]
+
+            self.ffmpeg_run(self.name, music_name, sampling_rate)
+
+            elapsed = (time.perf_counter() - start_time)
+            print("耗时:%6.2f" % elapsed + "秒")
+            self.content.set("耗时:%6.2f" % elapsed + "秒")
+        finally:
+            self.lock.release()
+            # 恢复网络转换按钮
+            self.buttonOpenUrl.config(state="normal")
+
     def localfile_convert(self):
         # 禁用网络转换按钮
         self.buttonOpenUrl.config(state="disabled")
@@ -540,22 +571,10 @@ class Application(tk.Tk):
             self.buttonOpenUrl.config(state="normal")
             return
 
-        start_time = time.perf_counter()
-
-        sampling_rate = "48000"
-        if self.sampling_rate_ver.get() == 1:
-            sampling_rate = "32000"
-
-        music_name = os.path.splitext(os.path.basename(self.name))[0]
-
-        self.ffmpeg_run(self.name, music_name, sampling_rate)
-
-        elapsed = (time.perf_counter() - start_time)
-        print("耗时:%6.2f" % elapsed + "秒")
-        self.content.set("耗时:%6.2f" % elapsed + "秒")
-
-        # 恢复网络转换按钮
-        self.buttonOpenUrl.config(state="normal")
+        if not self.lock.locked():
+            temp_thread = threading.Thread(target=self.localfile_thread)
+            temp_thread.setDaemon(True)
+            temp_thread.start()
 
     def open_browser(self, event):
         print(event)
