@@ -195,7 +195,7 @@ class Application(tk.Tk):
         if not os.path.exists(ffmpeg_file_name):
             self.top.deiconify()
             try:
-                str_out = ['./aria2c', '-o', "ffmpeg.7z", ffmpeg_file_url]
+                str_out = ['./aria2c', '-x', '8', '-o', "ffmpeg.7z", ffmpeg_file_url]
                 print(str_out)
                 if sys.platform[:3] == "win":
                     si = subprocess.STARTUPINFO()
