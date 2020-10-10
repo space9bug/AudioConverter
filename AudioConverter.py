@@ -5,6 +5,7 @@ import random
 import re
 import struct
 import subprocess
+import sys
 import threading
 import time
 import tkinter as tk
@@ -13,6 +14,8 @@ from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
 
+if sys.platform == "darwin":
+    from tkmacosx import Button
 import requests
 
 import Amusic
@@ -107,7 +110,10 @@ def burying_point():
 
 
 def show_file_path():
-    subprocess.run(['explorer.exe', '/n,WAV'])
+    if sys.platform[:3] == "win":
+        subprocess.run(['explorer.exe', '/n,WAV'])
+    if sys.platform == "darwin":
+        subprocess.run(['open', 'WAV/'])
 
 
 def del_file(path):
@@ -138,8 +144,9 @@ class Application(tk.Tk):
         self.withdraw()
         self.top = tk.Toplevel()
         self.top.title("请勿关闭")
-        self.top.iconbitmap("logo.ico")
-        self.top.attributes("-alpha", 0.99)
+        if sys.platform[:3] == "win":
+            self.top.iconbitmap("logo.ico")
+            self.top.attributes("-alpha", 0.99)
 
         def close_fun():
             ans = messagebox.askokcancel(title="警告", message="首次使用需要网络，确定要关闭吗？")
@@ -176,21 +183,30 @@ class Application(tk.Tk):
 
     def init_fun(self):
         # 创建输出文件夹
-        mkdir("WAV\\")
+        mkdir("WAV/")
 
         # print("开始下载ffmpeg包")
-        if not os.path.exists("ffmpeg.exe"):
+        if sys.platform[:3] == "win":
+            ffmpeg_file_name = "ffmpeg.exe"
+            ffmpeg_file_url = "https://ncstatic.clewm.net/rsrc/2020/0920/08/67baff128cddba3d1104b7be2f9f84fa.obj"
+        if sys.platform == "darwin":
+            ffmpeg_file_name = "ffmpeg"
+            ffmpeg_file_url = "https://git.yumenaka.net/evermeet.cx/ffmpeg/get"
+        if not os.path.exists(ffmpeg_file_name):
             self.top.deiconify()
             try:
-                str_out = ['aria2c.exe', '-o', "ffmpeg.7z",
-                           "https://ncstatic.clewm.net/rsrc/2020/0920/08/67baff128cddba3d1104b7be2f9f84fa.obj"]
+                str_out = ['./aria2c', '-o', "ffmpeg.7z", ffmpeg_file_url]
                 print(str_out)
-                si = subprocess.STARTUPINFO()
-                si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
-                si.wShowWindow = subprocess.SW_HIDE
-                process = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                           encoding="utf-8",
-                                           text=True, startupinfo=si)
+                if sys.platform[:3] == "win":
+                    si = subprocess.STARTUPINFO()
+                    si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
+                    si.wShowWindow = subprocess.SW_HIDE
+                    process = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                               encoding="utf-8",
+                                               text=True, startupinfo=si)
+                if sys.platform == "darwin":
+                    process = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                               encoding="utf-8", text=True)
                 for line in process.stdout:
                     # print(line)
 
@@ -208,18 +224,26 @@ class Application(tk.Tk):
                 process.wait()
                 if process.poll() == 0:
                     # 解压文件
-                    str_out = ['7z.exe', 'x', "ffmpeg.7z"]
+                    str_out = ['./7z', 'x', "ffmpeg.7z"]
                     print(str_out)
-                    si = subprocess.STARTUPINFO()
-                    si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
-                    si.wShowWindow = subprocess.SW_HIDE
-                    process_1 = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                                 encoding="utf-8",
-                                                 text=True, startupinfo=si)
+                    if sys.platform[:3] == "win":
+                        si = subprocess.STARTUPINFO()
+                        si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
+                        si.wShowWindow = subprocess.SW_HIDE
+                        process_1 = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE,
+                                                     stderr=subprocess.STDOUT,
+                                                     encoding="utf-8",
+                                                     text=True, startupinfo=si)
+                    if sys.platform == "darwin":
+                        process_1 = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE,
+                                                     stderr=subprocess.STDOUT,
+                                                     encoding="utf-8", text=True)
                     process_1.wait()
                     if process_1.poll() == 0:
                         for item_7z in glob.glob("ffmpeg*.7z"):
                             os.remove(item_7z)
+                        if sys.platform == "darwin":
+                            os.chmod("./ffmpeg", 0o755)
                         print("解压完成")
                         self.downBar["value"] = 110
                         self.top.destroy()
@@ -237,8 +261,9 @@ class Application(tk.Tk):
 
     def createWidgets(self):
         self.title("嗖音HOME " + self.version[1:] + " - 独居者")
-        self.iconbitmap("logo.ico")
-        self.attributes("-alpha", 0.99)
+        if sys.platform[:3] == "win":
+            self.iconbitmap("logo.ico")
+            self.attributes("-alpha", 0.99)
         # 设置颜色
         progress_color = "#1E94A0"
         progress_chunk_color = "#FA7268"
@@ -249,9 +274,14 @@ class Application(tk.Tk):
         btn_color = "#14B09B"
         frame_color = "#0359AE"
         # 设置字体
-        l_font = ("宋体", 12)
-        m_font = ("宋体", 11)
-        s_font = ("宋体", 9)
+        if sys.platform[:3] == "win":
+            l_font = ("宋体", 12)
+            m_font = ("宋体", 11)
+            s_font = ("宋体", 9)
+        if sys.platform == "darwin":
+            l_font = ("宋体", 16)
+            m_font = ("宋体", 15)
+            s_font = ("宋体", 12)
         # 设置窗口大小
         width = 603
         height = 339
@@ -283,15 +313,25 @@ class Application(tk.Tk):
         updateLab.place(x=0, y=0, width=230, height=25)
         updateLab.bind("<Button-1>", self.open_browser)
 
-        self.text = tk.Text(R_frame, width=5, height=5, bd=1, relief="solid", font=s_font, bg=frame_color,
-                            fg=font_color)
+        if sys.platform[:3] == "win":
+            self.text = tk.Text(R_frame, width=5, height=5, bd=1, relief="solid", font=s_font, bg=frame_color,
+                                fg=font_color)
+        if sys.platform == "darwin":
+            self.text = tk.Text(R_frame, width=5, height=5, bd=1, relief="solid", font=s_font, bg=frame_color,
+                                fg=font_color, highlightthickness=0)
         self.text.place(x=30, y=50, width=170, height=155)
         self.text.insert(tk.INSERT, "有什么想对开发者说的可以说")
         self.text.bind("<Button-1>", self.del_show)
 
-        buttonSend = tk.Button(R_frame, text="给开发者的话", command=self.send_message, font=m_font, bd=0, bg=btn_color,
-                               fg=font_color,
-                               activeforeground=font_color, activebackground=frame_color)
+        if sys.platform[:3] == "win":
+            buttonSend = tk.Button(R_frame, text="给开发者的话", command=self.send_message, font=m_font, bd=0, bg=btn_color,
+                                   fg=font_color,
+                                   activeforeground=font_color, activebackground=frame_color)
+        if sys.platform == "darwin":
+            buttonSend = Button(R_frame, text="给开发者的话", command=self.send_message, font=m_font, borderless=1,
+                                bg=btn_color,
+                                fg=font_color,
+                                activeforeground=font_color, activebackground=frame_color)
         buttonSend.place(x=65, y=230, width=101, height=30)
 
         declare_str = "声明：仅供个人录制音频转换使用"
@@ -318,31 +358,57 @@ class Application(tk.Tk):
         lab = tk.Label(L_frame, textvariable=self.content, font=m_font, bg=frame_color, fg=font_color)
         lab.place(x=30, y=110, width=313, height=20)
 
-        self.entry_url = tk.Entry(L_frame, validate="focusin", validatecommand=self.del_url_show, font=s_font, bd=1,
-                                  relief="solid",
-                                  bg=frame_color,
-                                  fg=font_color)
+        if sys.platform[:3] == "win":
+            self.entry_url = tk.Entry(L_frame, validate="focusin", validatecommand=self.del_url_show, font=s_font, bd=1,
+                                      relief="solid",
+                                      bg=frame_color,
+                                      fg=font_color)
+        if sys.platform == "darwin":
+            self.entry_url = tk.Entry(L_frame, validate="focusin", validatecommand=self.del_url_show, font=s_font, bd=1,
+                                      relief="solid",
+                                      bg=frame_color,
+                                      fg=font_color, highlightthickness=0)
         self.entry_url.place(x=30, y=160, width=238, height=30)
         self.entry_url.insert(0, "请输入分享链接即可")
 
-        self.buttonOpenUrl = tk.Button(L_frame, text="网络转换", command=self.urlfile_convert, font=m_font, bd=0,
-                                       bg=btn_color,
-                                       fg=font_color,
-                                       activeforeground=font_color,
-                                       activebackground=frame_color)
+        if sys.platform[:3] == "win":
+            self.buttonOpenUrl = tk.Button(L_frame, text="网络转换", command=self.urlfile_convert, font=m_font, bd=0,
+                                           bg=btn_color,
+                                           fg=font_color,
+                                           activeforeground=font_color,
+                                           activebackground=frame_color)
+        if sys.platform == "darwin":
+            self.buttonOpenUrl = Button(L_frame, text="网络转换", command=self.urlfile_convert, font=m_font, borderless=1,
+                                        bg=btn_color,
+                                        fg=font_color,
+                                        activeforeground=font_color,
+                                        activebackground=frame_color)
         self.buttonOpenUrl.place(x=268, y=160, width=75, height=30)
 
-        self.buttonStart = tk.Button(L_frame, text="本地转换", command=self.localfile_convert, font=m_font, bd=0,
-                                     bg=btn_color,
-                                     fg=font_color,
-                                     activeforeground=font_color,
-                                     activebackground=frame_color)
+        if sys.platform[:3] == "win":
+            self.buttonStart = tk.Button(L_frame, text="本地转换", command=self.localfile_convert, font=m_font, bd=0,
+                                         bg=btn_color,
+                                         fg=font_color,
+                                         activeforeground=font_color,
+                                         activebackground=frame_color)
+        if sys.platform == "darwin":
+            self.buttonStart = Button(L_frame, text="本地转换", command=self.localfile_convert, font=m_font, borderless=1,
+                                      bg=btn_color,
+                                      fg=font_color,
+                                      activeforeground=font_color,
+                                      activebackground=frame_color)
         self.buttonStart.place(x=268, y=200, width=75, height=30)
 
-        buttonOpen = tk.Button(L_frame, text="打开本地文件", command=self.openfile, font=m_font, bd=0, bg=btn_color,
-                               fg=font_color,
-                               activeforeground=font_color,
-                               activebackground=frame_color)
+        if sys.platform[:3] == "win":
+            buttonOpen = tk.Button(L_frame, text="打开本地文件", command=self.openfile, font=m_font, bd=0, bg=btn_color,
+                                   fg=font_color,
+                                   activeforeground=font_color,
+                                   activebackground=frame_color)
+        if sys.platform == "darwin":
+            buttonOpen = Button(L_frame, text="打开本地文件", command=self.openfile, font=m_font, borderless=1, bg=btn_color,
+                                fg=font_color,
+                                activeforeground=font_color,
+                                activebackground=frame_color)
         buttonOpen.place(x=110, y=200, width=101, height=30)
 
         labOut = tk.Label(L_frame, text="输出配置：", justify="left", font=m_font, bg=frame_color, fg=font_color)
@@ -354,10 +420,16 @@ class Application(tk.Tk):
                                    selectcolor=frame_color)
         buttonVer.place(x=110, y=250, width=71, height=30)
 
-        buttonFile = tk.Button(L_frame, text="浏览输出", command=show_file_path, font=s_font, bd=0, bg=btn_color,
-                               fg=font_color,
-                               activeforeground=font_color,
-                               activebackground=frame_color)
+        if sys.platform[:3] == "win":
+            buttonFile = tk.Button(L_frame, text="浏览输出", command=show_file_path, font=s_font, bd=0, bg=btn_color,
+                                   fg=font_color,
+                                   activeforeground=font_color,
+                                   activebackground=frame_color)
+        if sys.platform == "darwin":
+            buttonFile = Button(L_frame, text="浏览输出", command=show_file_path, font=s_font, borderless=1, bg=btn_color,
+                                fg=font_color,
+                                activeforeground=font_color,
+                                activebackground=frame_color)
         buttonFile.place(x=268, y=291, width=75, height=23)
 
         labHelp = tk.Label(L_frame, text="<使用指南>", font=s_font, bg=frame_color, fg=font_color)
@@ -443,6 +515,13 @@ class Application(tk.Tk):
                     # 恢复本地转换按钮
                     self.buttonStart.config(state="normal")
                     return
+                if music_data[1] == "null":
+                    music_name = music_data[0]
+                    self.content.set(music_name)
+                    messagebox.showwarning(title="警告", message=music_name)
+                    # 恢复本地转换按钮
+                    self.buttonStart.config(state="normal")
+                    return
                 music_name = music_data[0]
                 music_play_url = music_data[1]
             except Exception as e:
@@ -497,19 +576,23 @@ class Application(tk.Tk):
         self.progressBar["value"] = 0
         self.update()
 
-        temp_path = "TEMP\\"
+        temp_path = "TEMP/"
         mkdir(temp_path)
         temp_music_name = str(round(time.time() * 1000))
-        str_out = ['ffmpeg.exe', '-i', input_file, '-ar', sampling_rate, '-ac', '1', '-acodec', 'pcm_s16le',
+        str_out = ['./ffmpeg', '-i', input_file, '-ar', sampling_rate, '-ac', '1', '-acodec', 'pcm_s16le',
                    '-hide_banner',
                    temp_path + temp_music_name + ".wav"]
         print(str_out)
-        si = subprocess.STARTUPINFO()
-        si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
-        si.wShowWindow = subprocess.SW_HIDE
-        process = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                   encoding="utf-8",
-                                   text=True, startupinfo=si)
+        if sys.platform[:3] == "win":
+            si = subprocess.STARTUPINFO()
+            si.dwFlags = subprocess.CREATE_NEW_CONSOLE | subprocess.STARTF_USESHOWWINDOW
+            si.wShowWindow = subprocess.SW_HIDE
+            process = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                       encoding="utf-8",
+                                       text=True, startupinfo=si)
+        if sys.platform == "darwin":
+            process = subprocess.Popen(str_out, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                       encoding="utf-8", text=True)
         for line in process.stdout:
             # print(line)
 
@@ -530,7 +613,7 @@ class Application(tk.Tk):
         process.wait()
         if process.poll() == 0:
             infile_path = temp_path + temp_music_name + ".wav"
-            outfile_path = "WAV\\" + music_name + ".wav"
+            outfile_path = "WAV/" + music_name + ".wav"
 
             del_wavparm(infile_path, outfile_path)
 
@@ -639,8 +722,9 @@ class Application(tk.Tk):
         # 创建一个顶级弹窗
         helpTop = tk.Toplevel()
         helpTop.title("使用指南")
-        helpTop.iconbitmap("logo.ico")
-        helpTop.attributes("-alpha", 0.99)
+        if sys.platform[:3] == "win":
+            helpTop.iconbitmap("logo.ico")
+            helpTop.attributes("-alpha", 0.99)
 
         geometry_str = '%dx%d+%d+%d' % (
             width, height, origin_x + (origin_width - width) / 2, origin_y + (origin_height - height) / 2)
