@@ -738,13 +738,10 @@ class Application(tk.Tk):
 
     def update_fun(self):
         try:
-            url = "https://space9.gitee.io/sharesoftware/s/version.json"
+            url = "https://cdn.jsdelivr.net/gh/space9bug/sharesoftware@master/s/version.json"
 
             headers = {
-                'Host': "space9.gitee.io",
-                'Accept-Encoding': "gzip, deflate",
-                'Connection': "keep-alive",
-                'cache-control': "no-cache"
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
             }
 
             response = requests.request("GET", url, headers=headers)
