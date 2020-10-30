@@ -188,7 +188,11 @@ class Application(tk.Tk):
         # print("开始下载ffmpeg包")
         if sys.platform[:3] == "win":
             ffmpeg_file_name = "ffmpeg.exe"
-            ffmpeg_file_url = "https://ncstatic.clewm.net/rsrc/2020/0920/08/67baff128cddba3d1104b7be2f9f84fa.obj"
+            is_64bits = sys.maxsize > 2 ** 32
+            if is_64bits:
+                ffmpeg_file_url = "https://ncstatic.clewm.net/rsrc/2020/1030/13/7b83b0086583af8a79637e995807b964.obj"
+            else:
+                ffmpeg_file_url = "https://ncstatic.clewm.net/rsrc/2020/0920/08/67baff128cddba3d1104b7be2f9f84fa.obj"
         if sys.platform == "darwin":
             ffmpeg_file_name = "ffmpeg"
             ffmpeg_file_url = "https://git.yumenaka.net/evermeet.cx/ffmpeg/get"
