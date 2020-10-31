@@ -85,6 +85,16 @@ def del_wavparm(infile_path, outfile_path):
 def burying_point():
     # print("埋点统计")
     bury_url = "https://sourl.cn/NcRtPm"
+    if sys.platform[:3] == "win":
+        is_64bits = sys.maxsize > 2 ** 32
+        if is_64bits:
+            custom_parm = "?z=win64"
+        else:
+            custom_parm = "?z=win32"
+        bury_url += custom_parm
+    elif sys.platform == "darwin":
+        custom_parm = "?z=macOS"
+        bury_url += custom_parm
     cookie_file_name = "cookie.json"
 
     if os.path.exists(cookie_file_name):
