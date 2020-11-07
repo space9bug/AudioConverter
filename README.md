@@ -43,6 +43,8 @@ logo.ico
 # 反馈信息api
 - 钉钉机器人文档：https://ding-doc.dingtalk.com/doc#/serverapi2/krgddi
 - 与你机器人文档：http://www.uneed.com/openapi/pages/index.html#/chatbot/intro
+- 飞书机器人文档：https://www.feishu.cn/hc/zh-CN/articles/360024984973-%E6%9C%BA%E5%99%A8%E4%BA%BA-%E5%A6%82%E4%BD%95%E5%9C%A8%E7%BE%A4%E8%81%8A%E4%B8%AD%E4%BD%BF%E7%94%A8%E6%9C%BA%E5%99%A8%E4%BA%BA-#source=section
+- 企业微信机器人文档：https://work.weixin.qq.com/api/doc/90000/90136/91770
 
 # 文件资源
 logo.ico https://www.easyicon.net/1225972-music_icon.html
