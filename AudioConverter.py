@@ -82,6 +82,78 @@ def del_wavparm(infile_path, outfile_path):
     file_in.close()
 
 
+def send_yuni_msg(msg):
+    # 填写自己的与你群id和token
+    yuni_group_id = "XXXXXX"
+    yuni_group_token = "XXXXXX"
+    url = "https://api.uneedx.com/v2/robot/message"
+
+    payload = "token=" + yuni_group_token + "&unionGid=" + yuni_group_id + "&msgType=text&content=" + msg
+    headers = {
+        'Host': "api.uneedx.com",
+        'Content-Type': "application/x-www-form-urlencoded"
+    }
+
+    response = requests.request("POST", url, data=payload.encode("utf-8"), headers=headers)
+
+    print(response.text)
+    status = json.loads(response.text)["ec"]
+    error_msg = json.loads(response.text)["em"]
+    if status == 200:
+        print("发送成功")
+        ret_message = ["showinfo", "提示", "发送成功"]
+    elif status == 400:
+        print("当前反馈人数较多，请稍后再试")
+        ret_message = ["showwarning", "警告", "当前反馈人数较多，请稍后再试"]
+    elif status == 500:
+        print("系统错误，请稍后再试")
+        ret_message = ["showerror", "错误", "系统错误，请稍后再试"]
+    elif status == 501:
+        print("参数错误：" + error_msg)
+        ret_message = ["showerror", "错误", "参数错误：" + error_msg]
+    elif status == 505:
+        print("文本违规，不可发送")
+        ret_message = ["showwarning", "警告", "文本违规，不可发送"]
+    elif status == 506:
+        print("软件已更新，请下载新版使用")
+        ret_message = ["showinfo", "提示", "软件已更新，请下载新版使用"]
+    else:
+        print("未知错误")
+        ret_message = ["showerror", "错误", "未知错误"]
+    return ret_message
+
+
+def send_ding_msg(msg):
+    # 填写自己的钉钉群机器人access_token和自定义关键词key_word
+    access_token = "XXXXXX"
+    key_word = "XXXXXX"
+    url = "https://oapi.dingtalk.com/robot/send?access_token=" + access_token
+
+    payload_message = {"msgtype": "text", "text": {"content": key_word + "：" + msg}}
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=json.dumps(payload_message))
+
+    print(response.text)
+    if "status" not in json.loads(response.text):
+        errcode = json.loads(response.text)["errcode"]
+        if errcode == 0:
+            print("发送成功")
+            ret_message = ["showinfo", "提示", "发送成功"]
+        elif errcode == 130101:
+            print("当前反馈人数较多，请稍后再试")
+            ret_message = ["showwarning", "警告", "当前反馈人数较多，请稍后再试"]
+        else:
+            print("未知错误")
+            ret_message = ["showerror", "错误", "未知错误"]
+    else:
+        print("限流10分钟，请稍后再试")
+        ret_message = ["showerror", "错误", "限流10分钟，请稍后再试"]
+    return ret_message
+
+
 def burying_point():
     # print("埋点统计")
     bury_url = "https://sourl.cn/NcRtPm"
@@ -470,40 +542,13 @@ class Application(tk.Tk):
                 messagebox.showwarning(title="警告", message="请输入内容后发送")
                 return
 
-            # 填写自己的与你群id和token
-            yuni_group_id = "XXXXXX"
-            yuni_group_token = "XXXXXX"
-            url = "https://api.uneedx.com/v2/robot/message"
-
-            payload = "token=" + yuni_group_token + "&unionGid=" + yuni_group_id + "&msgType=text&content=" + msg
-            headers = {
-                'Host': "api.uneedx.com",
-                'Content-Type': "application/x-www-form-urlencoded"
-            }
-
-            response = requests.request("POST", url, data=payload.encode("utf-8"), headers=headers)
-
-            print(response.text)
-            status = json.loads(response.text)["ec"]
-            error_msg = json.loads(response.text)["em"]
-            if status == 200:
-                print("发送成功")
-                messagebox.showinfo(title="提示", message="发送成功")
-            if status == 400:
-                print("当前反馈人数较多，请稍后再试")
-                messagebox.showwarning(title="警告", message="当前反馈人数较多，请稍后再试")
-            if status == 500:
-                print("系统错误，请稍后再试")
-                messagebox.showerror(title="错误", message="系统错误，请稍后再试")
-            if status == 501:
-                print("参数错误：" + error_msg)
-                messagebox.showerror(title="错误", message="参数错误：" + error_msg)
-            if status == 505:
-                print("文本违规，不可发送")
-                messagebox.showwarning(title="警告", message="文本违规，不可发送")
-            if status == 506:
-                print("软件已更新，请下载新版使用")
-                messagebox.showinfo(title="提示", message="软件已更新，请下载新版使用")
+            ret_message = send_ding_msg(msg)
+            if ret_message[0] == "showinfo":
+                messagebox.showinfo(title=ret_message[1], message=ret_message[2])
+            if ret_message[0] == "showwarning":
+                messagebox.showwarning(title=ret_message[1], message=ret_message[2])
+            if ret_message[0] == "showerror":
+                messagebox.showerror(title=ret_message[1], message=ret_message[2])
         except Exception as e:
             print("网络未连接，请检查连接后重试")
             print(e)
