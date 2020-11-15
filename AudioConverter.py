@@ -129,7 +129,12 @@ def send_ding_msg(msg):
     key_word = "XXXXXX"
     url = "https://oapi.dingtalk.com/robot/send?access_token=" + access_token
 
-    payload_message = {"msgtype": "text", "text": {"content": key_word + "：" + msg}}
+    payload_message = {
+        "msgtype": "text",
+        "text": {
+            "content": key_word + "：" + msg
+        }
+    }
     headers = {
         'Content-Type': 'application/json'
     }
@@ -151,6 +156,34 @@ def send_ding_msg(msg):
     else:
         print("限流10分钟，请稍后再试")
         ret_message = ["showerror", "错误", "限流10分钟，请稍后再试"]
+    return ret_message
+
+
+def send_feishu_msg(msg):
+    # 填写自己的飞书群机器人token
+    token = "XXXXXX"
+    url = "https://open.feishu.cn/open-apis/bot/v2/hook/" + token
+
+    payload_message = {
+        "msg_type": "text",
+        "content": {
+            "text": msg
+        }
+    }
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.request("POST", url, headers=headers, data=json.dumps(payload_message))
+
+    print(response.text)
+    status_code = json.loads(response.text)["StatusCode"]
+    if status_code == 0:
+        print("发送成功")
+        ret_message = ["showinfo", "提示", "发送成功"]
+    else:
+        print("未知错误")
+        ret_message = ["showerror", "错误", "未知错误"]
     return ret_message
 
 
