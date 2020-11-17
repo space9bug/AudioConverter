@@ -275,7 +275,7 @@ class Application(tk.Tk):
     def __init__(self):
         super().__init__()
         self.name = ""
-        self.version = "V3.2.0"
+        self.version = "V3.2.1"
         self.sampling_rate_ver = tk.IntVar()
         self.content = tk.StringVar()
         self.update_url = tk.StringVar()
