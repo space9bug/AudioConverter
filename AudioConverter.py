@@ -1,4 +1,7 @@
+import base64
 import glob
+import hashlib
+import hmac
 import json
 import os
 import random
@@ -13,6 +16,7 @@ import webbrowser
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
+from urllib import parse
 
 if sys.platform == "darwin":
     from tkmacosx import Button
@@ -124,10 +128,19 @@ def send_yuni_msg(msg):
 
 
 def send_ding_msg(msg):
-    # 填写自己的钉钉群机器人access_token和自定义关键词key_word
+    # 填写自己的钉钉群机器人access_token、自定义关键词key_word和密钥secret
     access_token = "XXXXXX"
     key_word = "XXXXXX"
-    url = "https://oapi.dingtalk.com/robot/send?access_token=" + access_token
+    secret = "XXXXXX"
+
+    timestamp = str(round(time.time() * 1000))
+    secret_enc = secret.encode('utf-8')
+    string_to_sign = timestamp + "\n" + secret
+    string_to_sign_enc = string_to_sign.encode('utf-8')
+    hmac_code = hmac.new(secret_enc, string_to_sign_enc, digestmod=hashlib.sha256).digest()
+    sign = parse.quote_plus(base64.b64encode(hmac_code))
+
+    url = "https://oapi.dingtalk.com/robot/send?access_token=" + access_token + "&timestamp=" + timestamp + "&sign=" + sign
 
     payload_message = {
         "msgtype": "text",
@@ -142,14 +155,18 @@ def send_ding_msg(msg):
     response = requests.request("POST", url, headers=headers, data=json.dumps(payload_message))
 
     print(response.text)
-    if "status" not in json.loads(response.text):
-        errcode = json.loads(response.text)["errcode"]
+    res_json = json.loads(response.text)
+    if "status" not in res_json:
+        errcode = res_json["errcode"]
         if errcode == 0:
             print("发送成功")
             ret_message = ["showinfo", "提示", "发送成功"]
         elif errcode == 130101:
             print("当前反馈人数较多，请稍后再试")
             ret_message = ["showwarning", "警告", "当前反馈人数较多，请稍后再试"]
+        elif errcode == 310000:
+            print("安全设置错误：" + res_json["errmsg"])
+            ret_message = ["showerror", "错误", "安全设置错误：" + res_json["errmsg"]]
         else:
             print("未知错误")
             ret_message = ["showerror", "错误", "未知错误"]
@@ -160,14 +177,16 @@ def send_ding_msg(msg):
 
 
 def send_feishu_msg(msg):
-    # 填写自己的飞书群机器人token
+    # 填写自己的飞书群机器人token和自定义关键词key_word
     token = "XXXXXX"
+    key_word = "XXXXXX"
+
     url = "https://open.feishu.cn/open-apis/bot/v2/hook/" + token
 
     payload_message = {
         "msg_type": "text",
         "content": {
-            "text": msg
+            "text": key_word + "：" + msg
         }
     }
     headers = {
@@ -177,13 +196,23 @@ def send_feishu_msg(msg):
     response = requests.request("POST", url, headers=headers, data=json.dumps(payload_message))
 
     print(response.text)
-    status_code = json.loads(response.text)["StatusCode"]
-    if status_code == 0:
-        print("发送成功")
-        ret_message = ["showinfo", "提示", "发送成功"]
+    res_json = json.loads(response.text)
+    if "code" in res_json:
+        code = res_json["code"]
+        if code == 19024:
+            print("关键词校验失败")
+            ret_message = ["showerror", "错误", "关键词校验失败"]
+        else:
+            print("未知错误：" + res_json["msg"])
+            ret_message = ["showerror", "错误", "未知错误：" + res_json["msg"]]
     else:
-        print("未知错误")
-        ret_message = ["showerror", "错误", "未知错误"]
+        status_code = res_json["StatusCode"]
+        if status_code == 0:
+            print("发送成功")
+            ret_message = ["showinfo", "提示", "发送成功"]
+        else:
+            print("未知错误")
+            ret_message = ["showerror", "错误", "未知错误"]
     return ret_message
 
 
@@ -760,14 +789,12 @@ class Application(tk.Tk):
     def read_fun(self):
         pre_url = "https://blog.csdn.net/qq_41730930"
         try:
-            read_data_url = "https://sourl.cn/GL53FH"
+            read_data_url = "https://cdn.jsdelivr.net/gh/space9bug/sharesoftware@master/s/articles.json"
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36'
             }
-            res = requests.request("GET", read_data_url, headers=headers, allow_redirects=False)
-            location_url = res.headers["Location"]
 
-            response = requests.request("GET", location_url, headers=headers)
+            response = requests.request("GET", read_data_url, headers=headers)
             response.encoding = "utf-8"
 
             response_code = response.status_code
@@ -781,7 +808,10 @@ class Application(tk.Tk):
 
                     article_url = read_data[read_index][1]
                     if article_url is not None:
-                        self.read_url = pre_url + "/article/details/" + article_url
+                        if re.match(r"^\d*$", article_url) is None:
+                            self.read_url = article_url
+                        else:
+                            self.read_url = pre_url + "/article/details/" + article_url
                     else:
                         self.read_url = pre_url
                 else:
