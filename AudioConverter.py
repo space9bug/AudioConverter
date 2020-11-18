@@ -177,13 +177,22 @@ def send_ding_msg(msg):
 
 
 def send_feishu_msg(msg):
-    # 填写自己的飞书群机器人token和自定义关键词key_word
+    # 填写自己的飞书群机器人token、自定义关键词key_word和密钥secret
     token = "XXXXXX"
     key_word = "XXXXXX"
+    secret = "XXXXXX"
+
+    timestamp = str(round(time.time()))
+    string_to_sign = timestamp + "\n" + secret
+    string_to_sign_enc = string_to_sign.encode('utf-8')
+    hmac_code = hmac.new(string_to_sign_enc, b"", digestmod=hashlib.sha256).digest()
+    sign = base64.b64encode(hmac_code).decode('utf-8')
 
     url = "https://open.feishu.cn/open-apis/bot/v2/hook/" + token
 
     payload_message = {
+        "timestamp": timestamp,
+        "sign": sign,
         "msg_type": "text",
         "content": {
             "text": key_word + "：" + msg
@@ -202,6 +211,9 @@ def send_feishu_msg(msg):
         if code == 19024:
             print("关键词校验失败")
             ret_message = ["showerror", "错误", "关键词校验失败"]
+        elif code == 19021:
+            print("签名校验失败")
+            ret_message = ["showerror", "错误", "签名校验失败"]
         else:
             print("未知错误：" + res_json["msg"])
             ret_message = ["showerror", "错误", "未知错误：" + res_json["msg"]]
