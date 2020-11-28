@@ -6,6 +6,7 @@ import json
 import os
 import random
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -63,27 +64,40 @@ def get_seconds(input_time):
     return ts
 
 
-def del_wavparm(infile_path, outfile_path):
-    file_in = open(infile_path, 'rb')
-    data = file_in.read(100)
-    # print(data[4:8])
-    if data[36:40] == b'LIST':
-        print(data[36:70])
-        length5 = struct.unpack('<L', bytes(data[40:44]))
-        cut_len = length5[0] + 8
+def del_wavparm(file_path):
+    with open(file_path, 'rb+') as file:
+        data = file.read(100)
+        # print(data[4:8])
+        if data[36:40] == b'LIST':
+            print(data[36:70])
+            length5 = struct.unpack('<L', bytes(data[40:44]))
+            cut_len = length5[0] + 8
 
-        length0 = struct.unpack('<L', bytes(data[4:8]))
-        f_len = struct.pack('<L', length0[0] - cut_len)
-        print(f_len)
+            length0 = struct.unpack('<L', bytes(data[4:8]))
+            new_size = length0[0] - cut_len
+            f_len = struct.pack('<L', new_size)
+            print(f_len)
 
-    file_out = open(outfile_path, "wb")
-    file_out.write(data[0:4])
-    file_out.write(f_len)
-    file_out.write(data[8:36])
-    file_in.seek(36 + cut_len, 0)
-    file_out.write(file_in.read())
-    file_out.close()
-    file_in.close()
+            file.seek(4, 0)
+            file.write(f_len)
+
+            copy_size = new_size + 8 - 36
+            BLOCK_SIZE = 1024 * 1024
+            first_copy_size = copy_size % BLOCK_SIZE
+
+            file.seek(36 + cut_len, 0)
+            first_temp_data = file.read(first_copy_size)
+            file.seek(36, 0)
+            file.write(first_temp_data)
+
+            loop_num = copy_size // BLOCK_SIZE
+            for i in range(loop_num):
+                file.seek(36 + cut_len + first_copy_size + (i * BLOCK_SIZE), 0)
+                temp_data = file.read(BLOCK_SIZE)
+                file.seek(36 + first_copy_size + (i * BLOCK_SIZE), 0)
+                file.write(temp_data)
+
+            file.truncate()
 
 
 def send_yuni_msg(msg):
@@ -748,7 +762,8 @@ class Application(tk.Tk):
             infile_path = temp_path + temp_music_name + ".wav"
             outfile_path = "WAV/" + music_name + ".wav"
 
-            del_wavparm(infile_path, outfile_path)
+            del_wavparm(infile_path)
+            shutil.move(infile_path, outfile_path)
 
             del_file(temp_path)
             print("success:", process)
